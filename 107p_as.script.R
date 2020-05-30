@@ -137,30 +137,32 @@ lower2
 
 # I illustrate the approximate beginning of the decline with the following ggplot for rec_retail
 # Most counties experience a decrease in mobility significantly below the baseline, 0, around March 14
-num <- sample(seq(from = 2, to = 152, by = 1), size = 5, replace = TRUE)
-regions <- unique(t$region)
-g <-
+
+
+# I create a function whose argument is the type of mobility change to plot
+plotr <- function(z) {
+  num <- sample(seq(from = 2, to = 152, by = 1), size = 5, replace = TRUE)
+  regions <- unique(t$region)
   ggplot(filter(t, 
-              region == regions[num[1]] |
-                region == regions[num[2]] | 
-                region == regions[num[3]] | 
-                region == regions[num[4]] | 
-                region == regions[num[5]])) +
-  geom_smooth(aes(x = date, y = pc_rec_retail, color = region), se = FALSE) +
-  labs(
-    title = "Change in Mobility for 5 random counties",
-    subtitle = "This change is for the Recreation and Retail category",
-    x = "Date",
-    y = "Percentage Change in Mobility",
-    caption = "Figure 1") +
-  theme(
-    plot.subtitle = element_text(face = "italic", color = "darkblue"),
-    plot.caption = element_text(face = "bold")) +
-  geom_hline(yintercept = -5, linetype = "longdash", color = "#666666") +
-  scale_color_brewer(palette = "Dark2")
-
-
-
+                region == regions[num[1]] |
+                  region == regions[num[2]] | 
+                  region == regions[num[3]] | 
+                  region == regions[num[4]] | 
+                  region == regions[num[5]])) +
+    geom_smooth(aes_string(x = "date", y = z, color = "region"), se = FALSE) +
+    labs(
+      title = "Change in Mobility for 5 random counties",
+      subtitle = "This change is for the Recreation and Retail category",
+      x = "Date",
+      y = "Percentage Change in Mobility",
+      caption = "Figure 1") +
+    theme(
+      plot.subtitle = element_text(face = "italic", color = "darkblue"),
+      plot.caption = element_text(face = "bold")) +
+    geom_hline(yintercept = -5, linetype = "longdash", color = "#666666") +
+    scale_color_brewer(palette = "Dark2")
+}
+plotr("pc_rec_retail")
 
 
 
