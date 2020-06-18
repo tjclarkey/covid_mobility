@@ -1,0 +1,177 @@
+---
+title: "Main Function"
+output: html_document
+---
+
+Ideas:
+- create a function which determines the average movement and then determines the date for a significant drop
+  - this will be a task involving some thoughtfulness and will improve my problem solving
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(dplyr)
+library(tidyverse)
+library(reshape2)
+library(plyr)
+library(jtools)
+library(ggstance)
+library(huxtable)
+```
+
+Improvements:
+- uses march 14 as policy enactment date for all countries. probably not true.
+```{r}
+# x is the country name
+# a is the type of mobility. if the type of mobility is recreation and retail, then a == "pc_rec_retail".
+main_function <- function(x, a) {
+  
+  # Allows the user to select a country to inspect and this function will filter for that specific country
+  # Function input - x, x: country name
+  mobdata <- read_csv("~/Documents/Git/covid_mobility/Data/MobRep.csv", 
+                      col_types = cols(sub_region_2 = col_character()))
+  t <- filter(mobdata, country_region == x) %>% 
+    rename(replace = c(
+      "country_region_code" = "country_code",
+      "country_region" = "country",
+      "sub_region_1" = "region",
+      "sub_region_2" = "sub_region",
+      "retail_and_recreation_percent_change_from_baseline" = "pc_rec_retail",
+      "grocery_and_pharmacy_percent_change_from_baseline"  = "pc_grocery_pharma",
+      "parks_percent_change_from_baseline" = "pc_parks",
+      "transit_stations_percent_change_from_baseline" = "pc_transit",
+      "workplaces_percent_change_from_baseline" = "pc_workplace",
+      "residential_percent_change_from_baseline" = "pc_residential")) %>% 
+    mutate(year = lubridate::year(date),
+           month = lubridate::month(date),
+           day = lubridate::day(date))
+  
+  
+  # Assigns dates to either before pandemic policy announcement or after. At some point I will allow the dates to be inputs, or at least vary for different countries / regions
+  for (i in unique(t$month)) {
+    for (j in unique(t$day)) {
+      t[, "before_after"] <- ifelse(t$month == 2 | (t$month == 3 & t$day <= 14), "before", "after")
+    }
+  }
+  
+  # t has change in mobility for each type and for every day for the chosen country
+  
+  # Obtains the average mobility change for the type of mobility that a user chooses to inspect
+  # Function input - a, a: mobility type
+  if (a == "pc_rec_retail") {
+    something <- ddply(t, 
+                       .(before_after), 
+                       transform, 
+                       rec_retail_country = mean(pc_rec_retail, na.rm = TRUE)) %>% 
+      ddply( 
+        .(region, before_after),
+        transform,
+        rec_retail_county1 = mean(pc_rec_retail, na.rm = TRUE)) %>% 
+      ddply(
+        .(region, sub_region, before_after),
+        transform,
+        rec_retail_county2 = mean(pc_rec_retail, na.rm = TRUE)
+    )
+  } 
+  else if (a == "pc_grocery_pharma") {
+    something <- ddply(t, 
+                       .(before_after), 
+                       transform, 
+                       grocery_pharma_country = mean(pc_rec_retail, na.rm = TRUE)) %>% 
+      ddply( 
+        .(region, before_after),
+        transform,
+        grocery_pharma_county1 = mean(pc_rec_retail, na.rm = TRUE)) %>% 
+      ddply(
+        .(region, sub_region, before_after),
+        transform,
+        grocery_pharma_county2 = mean(pc_rec_retail, na.rm = TRUE)
+    )
+  }
+  else if (a == "pc_parks") {
+    something <- ddply(t, 
+                       .(before_after), 
+                       transform, 
+                       parks_country = mean(pc_rec_retail, na.rm = TRUE)) %>% 
+      ddply( 
+        .(region, before_after),
+        transform,
+        parks_county1 = mean(pc_rec_retail, na.rm = TRUE)) %>% 
+      ddply(
+        .(region, sub_region, before_after),
+        transform,
+        parks_county2 = mean(pc_rec_retail, na.rm = TRUE)
+    )
+  }
+  else if (a == "pc_transit") {
+    something <- ddply(t, 
+                       .(before_after), 
+                       transform, 
+                      transit_country = mean(pc_rec_retail, na.rm = TRUE)) %>% 
+      ddply( 
+        .(region, before_after),
+        transform,
+        transit_county1 = mean(pc_rec_retail, na.rm = TRUE)) %>% 
+      ddply(
+        .(region, sub_region, before_after),
+        transform,
+        transit_county2 = mean(pc_rec_retail, na.rm = TRUE)
+    )
+  }
+  else if (a == "pc_workplace") {
+    something <- ddply(t, 
+                       .(before_after), 
+                       transform, 
+                       workplace_country = mean(pc_rec_retail, na.rm = TRUE)) %>% 
+      ddply( 
+        .(region, before_after),
+        transform,
+        workplace_county1 = mean(pc_rec_retail, na.rm = TRUE)) %>% 
+      ddply(
+        .(region, sub_region, before_after),
+        transform,
+        workplace_county2 = mean(pc_rec_retail, na.rm = TRUE)
+    )
+  }
+  else if (a == "pc_residential") {
+    something <- ddply(t, 
+                       .(before_after), 
+                       transform, 
+                       residential_country = mean(pc_rec_retail, na.rm = TRUE)) %>% 
+      ddply( 
+        .(region, before_after),
+        transform,
+        residential_county1 = mean(pc_rec_retail, na.rm = TRUE)) %>% 
+      ddply(
+        .(region, sub_region, before_after),
+        transform,
+        residential_county2 = mean(pc_rec_retail, na.rm = TRUE)
+    )
+  }
+  
+  # Shows only two rows for each sub region; before and after
+  # Something 2 is useful for when knowing only the before and after average percentage is useful
+  something2 <- select(filter(something, 
+                              month == 2 & day == 15 | month == 4 & day ==1, !is.na(region)), 
+                       -(pc_rec_retail:pc_residential),
+                       -(contains(c("iso", "census")))
+                       )
+  
+  # Create a variable 'change in mobility.' 
+  
+}
+
+main_function("United States", "pc_grocery_pharma")
+# I will change the data frame so that I have entries only for before and after values
+
+main <- main %>% 
+  dcast(region ~ before_after, value.var = "avchg_rec_retail") %>% 
+  left_join(main) %>% 
+  filter(before_after == "after") %>% 
+  mutate(change_rec_retail = -(before - after)) %>% 
+  select(-(after:avchg_rec_retail))
+main
+
+```
+
